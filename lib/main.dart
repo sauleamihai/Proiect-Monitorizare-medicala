@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:proiect_monitoorizare_pacienti/Sign_up.dart';
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'Sign_up.dart';
+import 'firebase_options.dart'; // Ensure this is properly set up
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+FirebaseAuth auth = FirebaseAuth.instance;
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -31,21 +41,16 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFFCCEBE0),
+        backgroundColor: const Color(0xFFCCEBE0),
         elevation: 0,
-        title: Center(
+        title: const Center(
           child: Text(
             "Autentificare",
             style: TextStyle(
@@ -76,8 +81,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     width: 150,
                     height: 150,
                   ),
-                  SizedBox(height: 20),
-                  Text(
+                  const SizedBox(height: 20),
+                  const Text(
                     "Bun venit pe aplicația MEDLIV",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -85,49 +90,77 @@ class _MyHomePageState extends State<MyHomePage> {
                       color: Colors.blueGrey,
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   SizedBox(
                     width: 350,
                     height: 50,
                     child: TextField(
-                      decoration: InputDecoration(
+                      controller: emailController,
+                      decoration: const InputDecoration(
                         labelText: 'Email sau număr de telefon',
                         contentPadding: EdgeInsets.all(8),
                         border: OutlineInputBorder(),
                         filled: true,
-                        fillColor: Colors.cyan[400],
+                        fillColor: Colors.cyanAccent,
                       ),
-                      style: TextStyle(fontSize: 20),
+                      style: const TextStyle(fontSize: 20),
                       maxLines: 1,
                       minLines: 1,
                     ),
                   ),
-                  SizedBox(height: 20,),
+                  const SizedBox(height: 20),
                   SizedBox(
                     width: 350,
                     height: 50,
                     child: TextField(
-                      decoration: InputDecoration(
+                      controller: passwordController,
+                      decoration: const InputDecoration(
                         labelText: 'Parola',
                         contentPadding: EdgeInsets.all(8),
                         border: OutlineInputBorder(),
                         filled: true,
-                        fillColor: Colors.cyan[400],
+                        fillColor: Colors.cyanAccent,
                       ),
-                      style: TextStyle(fontSize: 20),
+                      style: const TextStyle(fontSize: 20),
                       maxLines: 1,
                       minLines: 1,
+                      obscureText: true,
                     ),
                   ),
-                  SizedBox(height: 20,),
+                  const SizedBox(height: 20),
                   SizedBox(
-                    width: 350,
+                    width: MediaQuery.of(context).size.width * 0.5,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Add functionality for sign-in button
+                      onPressed: () async {
+                        try {
+                          await FirebaseAuth.instance.signInWithEmailAndPassword(
+                            email: emailController.text,
+                            password: passwordController.text,
+                          );
+                          // If sign-in successful, navigate to the next screen
+                          // Replace 'NextScreen()' with the screen you want to navigate to
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => SignupPage()),
+                          );
+                        } on FirebaseAuthException catch (e) {
+                          if (e.code == 'user-not-found') {
+                            print('No user found for that email.');
+                            // Display feedback to the user
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('No user found for that email.')),
+                            );
+                          } else if (e.code == 'wrong-password') {
+                            print('Wrong password provided for that user.');
+                            // Display feedback to the user
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Wrong password provided for that user.')),
+                            );
+                          }
+                        }
                       },
-                      child: Text(
+                      child: const Text(
                         'Sign In',
                         style: TextStyle(fontSize: 20),
                       ),
@@ -136,7 +169,6 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ),
                   ),
-
                 ],
               ),
             ),
@@ -146,8 +178,8 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Text('Sign Up',style: TextStyle(fontSize: 15),),
-          SizedBox(height: 10),
+          const Text('Sign Up', style: TextStyle(fontSize: 15)),
+          const SizedBox(height: 10),
           FloatingActionButton(
             onPressed: () {
               Navigator.push(
@@ -168,5 +200,19 @@ class SignUpPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SignupPage();
+  }
+}
+
+class NextScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Next Screen'),
+      ),
+      body: const Center(
+        child: Text('Welcome to the next screen!'),
+      ),
+    );
   }
 }
